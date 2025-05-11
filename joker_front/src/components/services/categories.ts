@@ -25,9 +25,9 @@ export const categories: Category[] = [
     name: "Accessoire",
     image: "adidas.png",
   },
-  {
-    id: 5,
-    name: "Cartes Visites",
-    image: "model.png",
-  },
+  // {
+  //   id: 5,
+  //   name: "Cartes Visites",
+  //   image: "model.png",
+  // },
 ];

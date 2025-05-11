@@ -3,6 +3,7 @@ import { Article } from "../interfaces/CanvasSliceInterfaces";
 
 const articlesInitialState: Article[] = [
   {
+    articleId: uuid(),
     id: uuid(),
     articleName: "tshirt",
     articleFrontSideInfo: {
@@ -21,26 +22,14 @@ const articlesInitialState: Article[] = [
     articlePrice: 5000,
     articleBackground: "#ffffff",
   },
-  // {
-  //   id: uuid(),
-  //   articleName: "cool tshirt",
-  //   articleFrontSideInfo: {
-  //     name: "front",
-  //     src: "/tshirt.png",
-  //     texts: [],
-  //     images: [],
-  //   },
-  //   articleBackSideInfo: null,
-  //   active: "front",
-  //   articlePrice: 3400,
-  //   articleBackground: "#ffffff",
-  // },
+
   {
+    articleId: uuid(),
     id: uuid(),
     articleName: "cup",
     articleFrontSideInfo: {
       name: "front cup",
-      src: "/cuptest.png",
+      src: "/cup-test-front.png",
       texts: [],
       images: [],
     },
@@ -50,6 +39,7 @@ const articlesInitialState: Article[] = [
     articleBackground: "#ffffff",
   },
   {
+    articleId: uuid(),
     id: uuid(),
     articleName: "hat",
     articleFrontSideInfo: {

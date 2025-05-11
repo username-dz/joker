@@ -4,9 +4,7 @@ import {
   faMugHot,
   faHatCowboy,
   faKey,
-  faHourglass,
 } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState, useEffect } from "react";
 
 const articles = [

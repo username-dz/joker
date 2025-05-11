@@ -6,7 +6,7 @@ import Loader from "../loaders/Loader";
 import { Article } from "../../interfaces/CanvasSliceInterfaces";
 import { AxiosError } from "axios";
 import { useShop } from "../../contexts/ShopContext";
-import axios from "axios";
+import { algerianWilayas, findCitiesByWilaya } from "../../data/algeria-cities";
 
 interface OrderModelProps {
   setIsModelOpen: (value: boolean) => void;
@@ -24,6 +24,27 @@ const OrderModel = ({
   currentArticle,
 }: OrderModelProps) => {
   const { frontCanvas, backCanvas } = useShop();
+  const navigate = useNavigate();
+  
+  // Add new state variables for wilaya and city
+  const [selectedWilaya, setSelectedWilaya] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("");
+  const [availableCities, setAvailableCities] = useState<Array<{id: number; name: string}>>([]);
+  
+  const [selectedSize, setSelectedSize] = useState<string>(preSelectedSize);
+  const [name, setName] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // Update cities when wilaya changes
+  useEffect(() => {
+    if (selectedWilaya) {
+      const cities = findCitiesByWilaya(selectedWilaya);
+      setAvailableCities(cities);
+      setSelectedCity(""); // Reset selected city when wilaya changes
+    }
+  }, [selectedWilaya]);
 
   // Map frontend article names to backend-compatible values
   const getBackendArticleType = (frontendName: string): string => {
@@ -81,13 +102,6 @@ const OrderModel = ({
       </div>
     );
   }
-  const navigate = useNavigate();
-  const [selectedSize, setSelectedSize] = useState<string>(preSelectedSize);
-  const [name, setName] = useState<string>("");
-  const [phone, setPhone] = useState<string>("");
-  const [city, setCity] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const handleSizeSelection = (size: string) => {
     setSelectedSize(size);
@@ -177,7 +191,7 @@ const OrderModel = ({
   };
 
   const createOrder = async (): Promise<void | string> => {
-    if (!selectedSize || !phone || !city || !name) {
+    if (!selectedSize || !phone || !selectedWilaya || !selectedCity || !name) {
       return toast.error("Veuillez remplir tous les champs");
     }
 
@@ -237,11 +251,13 @@ const OrderModel = ({
       );
 
       // Create order data
+      const cityData = `${selectedCity}, ${algerianWilayas.find(w => w.code === selectedWilaya)?.name || ''}`;
+      
       const orderData = {
         article: backendArticleType,
         size: selectedSize,
         phone: phone,
-        city: city,
+        city: cityData, // Use the formatted city and wilaya
         name: name,
         description: `Order for ${name} - ${currentArticle.articleName} (${selectedSize}) in ${currentArticle.articleBackground || "default"} color`,
         color: currentArticle.articleBackground || "white",
@@ -423,13 +439,35 @@ const OrderModel = ({
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-              <input
-                type="text"
-                placeholder="Ville et wilaya"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+              
+              {/* New Wilaya selection dropdown */}
+              <select
+                value={selectedWilaya}
+                onChange={(e) => setSelectedWilaya(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+              >
+                <option value="">Sélectionner une wilaya</option>
+                {algerianWilayas.map((wilaya) => (
+                  <option key={wilaya.code} value={wilaya.code}>
+                    {wilaya.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* City selection dropdown - only enabled if wilaya is selected */}
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                disabled={!selectedWilaya}
+                className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+              >
+                <option value="">Sélectionner une ville</option>
+                {availableCities.map((city) => (
+                  <option key={city.id} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

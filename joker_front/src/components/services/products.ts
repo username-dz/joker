@@ -24,14 +24,7 @@ export const servicesData: ServiceItem[] = [
     category: "Homme",
     linkPath: "tshirt",
   },
-  {
-    id: 3,
-    name: "T-Shirt Sport",
-    price: "2000 DA",
-    image: "/adidas.png",
-    category: "Homme",
-    linkPath: "tshirt",
-  },
+
   {
     id: 4,
     name: "T-Shirt Blanc",
@@ -52,10 +45,11 @@ export const servicesData: ServiceItem[] = [
 
   {
     id: 9,
-    name: "Casquette Baseball",
+    name: "Casquette",
     price: "800 DA",
-    image: "/hat.png",
+    image: "/adidas.png",
     category: "Accessoire", // Changed to match UI category name
     linkPath: "hat",
   },
+  
 ];
