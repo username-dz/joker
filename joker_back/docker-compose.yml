@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  joker-dev-db:
+    container_name: joker-dev-db
+    image: postgres:16.3
+    environment:
+      - DB_HOST
+      - POSTGRES_PASSWORD
+      - DB_PORT
+      - BACK_HOST
+      - FRONT_HOST
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

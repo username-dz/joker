@@ -1,0 +1,150 @@
+/*@import url("https://fonts.googleapis.com/css2?family=Grey+Qo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Moderustic:wght@300..800&family=New+Amsterdam&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"); */
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap&family=Bebas+Neue&family=Anton&family=Impact&family=Lobster&family=Pacifico&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;700&family=Fira+Sans:wght@400;700&display=swap");
+/* @import url("https://fonts.googleapis.com/css2?family=Grey+Qo&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Moderustic:wght@300..800&family=New+Amsterdam&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"); */
+/* @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Impact&family=Lobster&family=Pacifico&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;700&family=Fira+Sans:wght@400;700&display=swap"); */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  overflow-x: hidden;
+}
+@media screen and (max-width: 576px) {
+  body {
+    padding-bottom: 4rem;
+  }
+}
+/* Custom Shape Divider - cssClipPath.com */
+.custom-shape-divider-bottom-1727200539 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+  transform: rotate(180deg);
+}
+
+.custom-shape-divider-bottom-1727200539 svg {
+  position: relative;
+  display: block;
+  width: calc(250% + 1.3px);
+  height: 280px;
+}
+
+.custom-shape-divider-bottom-1727200539 .shape-fill {
+  fill: #db3f40;
+}
+
+* {
+  scroll-behavior: smooth;
+  --mainColor: #db3f40;
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: #bbd5ff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mainColor);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #141e46;
+}
+.menu {
+  clip-path: polygon(0 0, 100% 0%, 100% 0, 0 0);
+}
+
+.clip-open {
+  clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 100%);
+}
+
+@media (min-width: 640px) {
+  .menu {
+    clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 100%) !important;
+  }
+}
+
+.faX {
+  animation: rotateAnimation 0.3s;
+}
+
+.faBars {
+  animation: scaleAnimation 0.3s;
+}
+
+@keyframes rotateAnimation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scaleAnimation {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+.custom-shape-divider-top-1727119435 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.custom-shape-divider-top-1727119435 svg {
+  position: relative;
+  display: block;
+  width: calc(100% + 1.3px);
+  height: 46px;
+  transform: rotateY(180deg);
+}
+
+.custom-shape-divider-top-1727119435 .shape-fill {
+  fill: #c5aaaa;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Add enhanced canvas touch controls for mobile */
+.canvas-controls {
+  touch-action: none;
+}
+
+/* Make canvas control points larger on touch screens */
+@media (pointer: coarse) {
+  .canvas-container .controls {
+    transform: scale(1.5);
+  }
+
+  /* Improve touch targets for text editing */
+  .canvas-container .text-selection {
+    padding: 8px;
+    min-height: 44px;
+  }
+}
+
+canvas {
+  z-index: auto;
+}
