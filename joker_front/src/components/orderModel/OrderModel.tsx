@@ -7,6 +7,7 @@ import { Article } from "../../interfaces/CanvasSliceInterfaces";
 import { AxiosError } from "axios";
 import { useShop } from "../../contexts/ShopContext";
 import { algerianWilayas, findCitiesByWilaya } from "../../data/algeria-cities";
+import { FaArrowLeft, FaUpload, FaTimes } from "react-icons/fa";
 
 interface OrderModelProps {
   setIsModelOpen: (value: boolean) => void;
@@ -25,17 +26,21 @@ const OrderModel = ({
 }: OrderModelProps) => {
   const { frontCanvas, backCanvas } = useShop();
   const navigate = useNavigate();
-  
-  // Add new state variables for wilaya and city
+
+  const [step, setStep] = useState<"form" | "confirmation">("form");
   const [selectedWilaya, setSelectedWilaya] = useState<string>("");
   const [selectedCity, setSelectedCity] = useState<string>("");
-  const [availableCities, setAvailableCities] = useState<Array<{id: number; name: string}>>([]);
-  
+  const [availableCities, setAvailableCities] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
   const [selectedSize, setSelectedSize] = useState<string>(preSelectedSize);
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
+  const [customDescription, setCustomDescription] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [customDesignFile, setCustomDesignFile] = useState<File | null>(null);
+  const [customDesignPreview, setCustomDesignPreview] = useState<string>("");
 
   // Update cities when wilaya changes
   useEffect(() => {
@@ -190,6 +195,68 @@ const OrderModel = ({
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
+        toast.error("Le fichier est trop volumineux. Maximum 10MB autorisé.");
+        return;
+      }
+
+      if (!file.type.startsWith("image/")) {
+        toast.error("Seuls les fichiers image sont autorisés.");
+        return;
+      }
+
+      setCustomDesignFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setCustomDesignPreview(previewUrl);
+    }
+  };
+
+  const removeCustomDesign = () => {
+    if (customDesignPreview) {
+      URL.revokeObjectURL(customDesignPreview);
+    }
+    setCustomDesignFile(null);
+    setCustomDesignPreview("");
+  };
+
+  const needsSize = (articleName: string): boolean => {
+    const articleType = articleName.toLowerCase();
+    return (
+      articleType.includes("shirt") ||
+      articleType.includes("t-shirt") ||
+      articleType.includes("sweet")
+    );
+  };
+
+  const validateForm = (): boolean => {
+    if (!name || !phone || !selectedWilaya || !selectedCity) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return false;
+    }
+
+    if (needsSize(currentArticle.articleName) && !selectedSize) {
+      toast.error("Veuillez sélectionner une taille");
+      return false;
+    }
+
+    if (!phone.match(/^(0|(\+213))([567][0-9]{8}|[0-9]{9})$/)) {
+      toast.error("Veuillez entrer un numéro de téléphone algérien valide");
+      return false;
+    }
+
+    return true;
+  };
+
+  const proceedToConfirmation = () => {
+    if (validateForm()) {
+      setStep("confirmation");
+    }
+  };
+
   const createOrder = async (): Promise<void | string> => {
     if (!selectedSize || !phone || !selectedWilaya || !selectedCity || !name) {
       return toast.error("Veuillez remplir tous les champs");
@@ -222,44 +289,37 @@ const OrderModel = ({
       let frontImageFile = null;
       let backImageFile = null;
 
-      // Try to get front image
-      if (frontCanvas) {
-        frontImageFile = await canvasToFile(frontCanvas, "front_design.png");
-        if (!frontImageFile) {
-          console.error("Failed to create front image file");
-          toast.error("Erreur de création du design avant");
+      if (customDesignFile) {
+        frontImageFile = customDesignFile;
+      } else {
+        // Capture canvas images as before
+        if (frontCanvas) {
+          frontImageFile = await canvasToFile(frontCanvas, "front_design.png");
+        }
+        if (backCanvas && currentArticle.articleName.toLowerCase() !== "cup") {
+          backImageFile = await canvasToFile(backCanvas, "back_design.png");
         }
       }
 
-      // Only try to get back image if not a mug
-      if (backCanvas && currentArticle.articleName.toLowerCase() !== "mug") {
-        backImageFile = await canvasToFile(backCanvas, "back_design.png");
-        if (!backImageFile) {
-          console.error("Failed to create back image file");
-        }
-      }
-
-      if (!frontImageFile) {
-        toast.error("Impossible de capturer le design avant");
+      if (!frontImageFile && !customDesignFile) {
+        toast.error("Aucun design n'a été fourni");
         setIsLoading(false);
         return;
       }
 
-      // Get backend article type using our mapping function
-      const backendArticleType = getBackendArticleType(
-        currentArticle.articleName || ""
-      );
+      const cityData = `${selectedCity}, ${algerianWilayas.find((w) => w.code === selectedWilaya)?.name || ""}`;
 
-      // Create order data
-      const cityData = `${selectedCity}, ${algerianWilayas.find(w => w.code === selectedWilaya)?.name || ''}`;
-      
+      const orderDescription = customDescription
+        ? customDescription
+        : `Commande pour ${name} - ${currentArticle.articleName}${selectedSize ? ` (${selectedSize})` : ""} en ${currentArticle.articleBackground || "blanc"}`;
+
       const orderData = {
-        article: backendArticleType,
-        size: selectedSize,
+        article: getBackendArticleType(currentArticle.articleName || ""),
+        size: needsSize(currentArticle.articleName) ? selectedSize : "",
         phone: phone,
-        city: cityData, // Use the formatted city and wilaya
+        city: cityData,
         name: name,
-        description: `Order for ${name} - ${currentArticle.articleName} (${selectedSize}) in ${currentArticle.articleBackground || "default"} color`,
+        description: orderDescription,
         color: currentArticle.articleBackground || "white",
         price: (price || currentArticle.articlePrice).toString(),
         quantity: quantity.toString(),
@@ -272,8 +332,8 @@ const OrderModel = ({
 
       // Use the original HttpClient which handles CSRF tokens automatically
       console.log("Submitting order with image files:", {
-        article: backendArticleType,
-        size: selectedSize,
+        article: getBackendArticleType(currentArticle.articleName || ""),
+        size: needsSize(currentArticle.articleName) ? selectedSize : "",
         hasFrontImage: !!frontImageFile,
         hasBackImage: !!backImageFile,
       });
@@ -308,9 +368,9 @@ const OrderModel = ({
         id: response.id || Date.now(),
         date: new Date().toISOString(),
         name: currentArticle.articleName || "Custom Item",
-        articleType: backendArticleType,
+        articleType: getBackendArticleType(currentArticle.articleName || ""),
         color: currentArticle.articleBackground || "white",
-        size: selectedSize,
+        size: needsSize(currentArticle.articleName) ? selectedSize : "",
         price: price || 0,
         quantity: quantity || 1,
         status: "processing",
@@ -379,6 +439,267 @@ const OrderModel = ({
     }
   };
 
+  const renderOrderConfirmation = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-bold">Confirmation de la commande</h3>
+
+      <div className="rounded-lg bg-gray-50 p-4 space-y-3">
+        <div className="flex justify-between">
+          <span className="font-medium">Article:</span>
+          <span>{currentArticle.articleName}</span>
+        </div>
+        {needsSize(currentArticle.articleName) && (
+          <div className="flex justify-between">
+            <span className="font-medium">Taille:</span>
+            <span>{selectedSize}</span>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <span className="font-medium">Quantité:</span>
+          <span>{quantity}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Prix:</span>
+          <span>{price} DA</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Nom:</span>
+          <span>{name}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Téléphone:</span>
+          <span>{phone}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Ville:</span>
+          <span>
+            {selectedCity},{" "}
+            {algerianWilayas.find((w) => w.code === selectedWilaya)?.name}
+          </span>
+        </div>
+      </div>
+
+      {customDesignPreview ? (
+        <div className="space-y-2">
+          <p className="font-medium">Design personnalisé:</p>
+          <img
+            src={customDesignPreview}
+            alt="Design personnalisé"
+            className="max-h-48 mx-auto object-contain rounded border"
+          />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="font-medium">Design créé:</p>
+          <div className="flex justify-center gap-4">
+            {frontCanvas && (
+              <img
+                src={frontCanvas.toDataURL()}
+                alt="Design avant"
+                className="max-h-48 object-contain rounded border"
+              />
+            )}
+            {backCanvas &&
+              currentArticle.articleName.toLowerCase() !== "cup" && (
+                <img
+                  src={backCanvas.toDataURL()}
+                  alt="Design arrière"
+                  className="max-h-48 object-contain rounded border"
+                />
+              )}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Description supplémentaire (optionnelle):
+        </label>
+        <textarea
+          value={customDescription}
+          onChange={(e) => setCustomDescription(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="Ajoutez des détails ou instructions particulières..."
+          rows={3}
+        />
+      </div>
+
+      <div className="flex gap-4 mt-6">
+        <button
+          onClick={() => setStep("form")}
+          className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+        >
+          <FaArrowLeft /> Retour
+        </button>
+        <button
+          onClick={createOrder}
+          disabled={isLoading}
+          className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader
+                backgroundColor="transparent"
+                color="white"
+                width={20}
+                height={20}
+              />
+              <span>Traitement...</span>
+            </div>
+          ) : (
+            "Confirmer la commande"
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderOrderForm = () => (
+    <>
+      <h2 className="text-2xl font-bold">Finaliser Votre Commande</h2>
+      <p className="text-gray-600">Produit : {currentArticle.articleName}</p>
+      <p className="text-gray-600">Prix : {price} DA</p>
+      {quantity > 1 && <p className="text-gray-600">Quantité : {quantity}</p>}
+
+      {/* Size selection if needed */}
+      {needsSize(currentArticle.articleName) && !preSelectedSize && (
+        <div className="mt-4 w-full">
+          <p className="mb-2 text-left font-semibold">Choisir une Taille</p>
+          <div className="mt-2 flex flex-wrap justify-center gap-4">
+            {["S", "M", "L", "XL", "XXL"].map((size) => (
+              <button
+                key={size}
+                onClick={() => handleSizeSelection(size)}
+                className={`rounded-lg border-2 px-4 py-2 ${
+                  selectedSize === size
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-black"
+                } transition duration-300 hover:bg-blue-500 hover:text-white`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Custom design upload */}
+      <div className="mt-6 w-full">
+        <p className="mb-2 text-left font-semibold">
+          Télécharger votre propre design (optionnel)
+        </p>
+        <div className="flex items-center gap-4">
+          <label className="flex-1">
+            <div className="flex items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-lg appearance-none cursor-pointer hover:border-blue-500 focus:outline-none">
+              {customDesignPreview ? (
+                <div className="relative w-full h-full">
+                  <img
+                    src={customDesignPreview}
+                    alt="Aperçu du design"
+                    className="object-contain w-full h-full"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      removeCustomDesign();
+                    }}
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  >
+                    <FaTimes size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <FaUpload className="w-8 h-8 text-gray-400" />
+                  <p className="text-sm text-gray-500">
+                    Cliquez ou glissez votre fichier ici
+                  </p>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileUpload}
+              disabled={!!customDesignPreview}
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Personal information form */}
+      <div className="mt-6 w-full">
+        <p className="mb-2 text-left font-semibold">Vos Informations</p>
+        <div className="mt-2 flex flex-col gap-4">
+          <input
+            type="text"
+            placeholder="Nom Complet *"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Numéro de Téléphone *"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+
+          <select
+            value={selectedWilaya}
+            onChange={(e) => setSelectedWilaya(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Sélectionner une wilaya *</option>
+            {algerianWilayas.map((wilaya) => (
+              <option key={wilaya.code} value={wilaya.code}>
+                {wilaya.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedCity}
+            onChange={(e) => setSelectedCity(e.target.value)}
+            disabled={!selectedWilaya}
+            className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+          >
+            <option value="">Sélectionner une ville *</option>
+            {availableCities.map((city) => (
+              <option key={city.id} value={city.name}>
+                {city.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {errorMessage && (
+        <div className="mt-4 w-full rounded-lg bg-red-100 p-3 text-red-700">
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row">
+        <button
+          onClick={() => setIsModelOpen(false)}
+          className="w-full rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition duration-300 hover:bg-gray-100 sm:w-1/2"
+        >
+          Annuler
+        </button>
+        <button
+          onClick={proceedToConfirmation}
+          disabled={isLoading}
+          className="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition duration-300 hover:bg-blue-700 disabled:bg-blue-400 sm:w-1/2"
+        >
+          Vérifier la commande
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div
       className="fixed left-0 top-0 z-[10000] flex h-screen w-screen items-center justify-center bg-black/80"
@@ -389,124 +710,7 @@ const OrderModel = ({
         className="container fixed mt-6 h-[80vh] w-[90%] max-w-[500px] overflow-auto rounded-2xl bg-white p-6 text-center sm:w-[50vw]"
       >
         <div className="flex flex-col items-center justify-center gap-2">
-          <h2 className="text-2xl font-bold">Finaliser Votre Commande</h2>
-          <p className="text-gray-600">
-            Produit : {currentArticle.articleName}
-          </p>
-          <p className="text-gray-600">Prix : {price} DA</p>
-          {quantity > 1 && (
-            <p className="text-gray-600">Quantité : {quantity}</p>
-          )}
-          {preSelectedSize && (
-            <p className="text-gray-600">Taille : {preSelectedSize}</p>
-          )}
-
-          {!preSelectedSize && (
-            <div className="mt-4 w-full">
-              <p className="mb-2 text-left font-semibold">Choisir une Taille</p>
-              <div className="mt-2 flex flex-wrap justify-center gap-4">
-                {["S", "M", "L", "XL", "XXL"].map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => handleSizeSelection(size)}
-                    className={`rounded-lg border-2 px-4 py-2 ${
-                      selectedSize === size
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-black"
-                    } transition duration-300 hover:bg-blue-500 hover:text-white`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6 w-full">
-            <p className="mb-2 text-left font-semibold">Vos Informations</p>
-            <div className="mt-2 flex flex-col gap-4">
-              <input
-                type="text"
-                placeholder="Nom Complet"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <input
-                type="text"
-                placeholder="Numéro de Téléphone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              
-              {/* New Wilaya selection dropdown */}
-              <select
-                value={selectedWilaya}
-                onChange={(e) => setSelectedWilaya(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">Sélectionner une wilaya</option>
-                {algerianWilayas.map((wilaya) => (
-                  <option key={wilaya.code} value={wilaya.code}>
-                    {wilaya.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* City selection dropdown - only enabled if wilaya is selected */}
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                disabled={!selectedWilaya}
-                className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
-              >
-                <option value="">Sélectionner une ville</option>
-                {availableCities.map((city) => (
-                  <option key={city.id} value={city.name}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {errorMessage && (
-            <div className="mt-4 w-full rounded-lg bg-red-100 p-3 text-red-700">
-              {errorMessage}
-            </div>
-          )}
-
-          <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row">
-            <button
-              onClick={() => setIsModelOpen(false)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition duration-300 hover:bg-gray-100 sm:w-1/2"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={() => {
-                createOrder();
-              }}
-              disabled={isLoading}
-              className="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition duration-300 hover:bg-blue-700 disabled:bg-blue-400 sm:w-1/2"
-            >
-              {isLoading ? (
-                <div className="flex w-full items-center justify-center space-x-2">
-                  <Loader
-                    backgroundColor="transparent"
-                    color="white"
-                    width={20}
-                    height={20}
-                    className="flex-shrink-0"
-                  />
-                  <span className="whitespace-nowrap">Traitement...</span>
-                </div>
-              ) : (
-                "Passer la Commande"
-              )}
-            </button>
-          </div>
+          {step === "form" ? renderOrderForm() : renderOrderConfirmation()}
         </div>
       </div>
     </div>

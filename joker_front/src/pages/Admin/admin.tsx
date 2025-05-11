@@ -10,6 +10,7 @@ import {
   FaTimes,
   FaExclamationTriangle,
   FaExpand,
+  FaDownload,
 } from "react-icons/fa";
 
 // Define interface for the article object based on the Django model
@@ -154,6 +155,58 @@ const Admin: React.FC = () => {
 
     return false;
   };
+
+  const downloadImage = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Error downloading image:", error);
+      toast.error("Erreur lors du téléchargement de l'image");
+    }
+  };
+
+  const renderImageWithDownload = (url: string, alt: string, index: number) => (
+    <div className="group relative">
+      <img
+        src={url}
+        alt={alt}
+        className="max-h-48 w-auto cursor-pointer rounded border border-gray-200 object-contain hover:opacity-90"
+        onClick={() => showEnlargedImage(url, alt)}
+        onError={(e) => {
+          e.currentTarget.src = "/empty_image.png";
+          e.currentTarget.onerror = null;
+        }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            downloadImage(url, `design-${index}.png`);
+          }}
+          className="rounded-full bg-white p-2 text-gray-700 shadow-lg hover:bg-gray-100"
+          title="Télécharger"
+        >
+          <FaDownload className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => showEnlargedImage(url, alt)}
+          className="rounded-full bg-white p-2 text-gray-700 shadow-lg hover:bg-gray-100"
+          title="Agrandir"
+        >
+          <FaExpand className="h-5 w-5" />
+        </button>
+      </div>
+    </div>
+  );
 
   // Filter requests based on search term
   const filteredRequests = requests.filter(
@@ -446,34 +499,14 @@ const Admin: React.FC = () => {
                             <p className="mb-2 text-center font-medium text-gray-700">
                               Avant
                             </p>
-                            <div className="group relative flex h-48 items-center justify-center">
-                              <img
-                                src={
-                                  request.front_image_url ||
-                                  request.front_image ||
-                                  request.frontImage ||
-                                  ""
-                                }
-                                alt="Design avant"
-                                className="max-h-48 w-auto cursor-pointer rounded border border-gray-200 object-contain hover:opacity-90"
-                                onClick={() =>
-                                  showEnlargedImage(
-                                    request.front_image_url ||
-                                      request.front_image ||
-                                      request.frontImage ||
-                                      "",
-                                    "Design avant"
-                                  )
-                                }
-                                onError={(e) => {
-                                  e.currentTarget.src = "/empty_image.png";
-                                  e.currentTarget.onerror = null;
-                                }}
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-                                <FaExpand className="h-8 w-8 text-white drop-shadow-lg" />
-                              </div>
-                            </div>
+                            {renderImageWithDownload(
+                              request.front_image_url ||
+                                request.front_image ||
+                                request.frontImage ||
+                                "",
+                              "Design avant",
+                              1
+                            )}
                           </div>
                         ) : (
                           <div className="w-full sm:w-2/5">
@@ -494,34 +527,14 @@ const Admin: React.FC = () => {
                             <p className="mb-2 text-center font-medium text-gray-700">
                               Arrière
                             </p>
-                            <div className="group relative flex h-48 items-center justify-center">
-                              <img
-                                src={
-                                  request.back_image_url ||
-                                  request.back_image ||
-                                  request.backImage ||
-                                  ""
-                                }
-                                alt="Design arrière"
-                                className="max-h-48 w-auto cursor-pointer rounded border border-gray-200 object-contain hover:opacity-90"
-                                onClick={() =>
-                                  showEnlargedImage(
-                                    request.back_image_url ||
-                                      request.back_image ||
-                                      request.backImage ||
-                                      "",
-                                    "Design arrière"
-                                  )
-                                }
-                                onError={(e) => {
-                                  e.currentTarget.src = "/empty_image.png";
-                                  e.currentTarget.onerror = null;
-                                }}
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-                                <FaExpand className="h-8 w-8 text-white drop-shadow-lg" />
-                              </div>
-                            </div>
+                            {renderImageWithDownload(
+                              request.back_image_url ||
+                                request.back_image ||
+                                request.backImage ||
+                                "",
+                              "Design arrière",
+                              2
+                            )}
                           </div>
                         ) : (
                           <div className="w-full sm:w-2/5">

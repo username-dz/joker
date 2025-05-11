@@ -16,29 +16,15 @@ const articles = [
     price: "5000 DA",
     image: "/tshirt.png",
   },
-  {
-    name: "Sweatshirt",
-    icon: faTshirt,
-    link: "/shop/tshirt",
-    description: "Des sweatshirts confortables avec votre design",
-    price: "6500 DA",
-    image: "/crew_front.png",
-  },
-  {
-    name: "Hoodie",
-    icon: faTshirt,
-    link: "/shop/tshirt",
-    description: "Des hoodies stylés avec impression personnalisée",
-    price: "7000 DA",
-    image: "/frontTshirt(1).png",
-  },
+
+
   {
     name: "Mug",
     icon: faMugHot,
     link: "/shop/cup",
     description: "Vos designs préférés sur des mugs de qualité",
     price: "1500 DA",
-    image: "/cuptest.png",
+    image: "/cup-test-front.png",
   },
   {
     name: "Casquette",
@@ -46,16 +32,16 @@ const articles = [
     link: "/shop/hat",
     description: "Casquettes personnalisées pour toutes les occasions",
     price: "2500 DA",
-    image: "/hat.png",
+    image: "/adidas.png",
   },
-  {
-    name: "Porte-clés",
-    icon: faKey,
-    link: "/shop/keyring",
-    description: "Porte-clés personnalisés avec vos designs",
-    price: "800 DA",
-    image: "/tshirt2.png",
-  },
+  // {
+  //   name: "Porte-clés",
+  //   icon: faKey,
+  //   link: "/shop/keyring",
+  //   description: "Porte-clés personnalisés avec vos designs",
+  //   price: "800 DA",
+  //   image: "/tshirt2.png",
+  // },
 ];
 
 const Articles = () => {
